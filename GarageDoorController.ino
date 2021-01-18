@@ -6,6 +6,7 @@
 #include "credentials.h"
 
 #define MIKEGARAGECONTACT D1
+#define DIANEGARAGECONTACT D2
 #define HOSTNAME "GarageController"
 #define MQTT_CLIENT_NAME "kolcun/outdoor/garagedoorcontroller"
 
@@ -15,6 +16,8 @@ const char* password = WIFI_PASSWD;
 const char* overwatchTopic = MQTT_CLIENT_NAME"/overwatch";
 
 char charPayload[50];
+String mikeState = "UNKNOWN";
+String dianeState = "UNKNOWN";
 
 WiFiClient wifiClient;
 PubSubClient pubSubClient(wifiClient);
@@ -26,6 +29,12 @@ void setup() {
   setupOTA();
   setupMqtt();
   setupRelays();
+  determineInitialState();
+
+  //publish initial states
+  pubSubClient.publish(MQTT_CLIENT_NAME"/mike/state", mikeState.c_str());
+  pubSubClient.publish(MQTT_CLIENT_NAME"/diane/state", dianeState.c_str());
+
 }
 
 void loop() {
@@ -35,6 +44,20 @@ void loop() {
   }
   pubSubClient.loop();
 
+  //watch for sensor changes
+  //update states based on sensor changes
+
+
+}
+
+void determineInitialState() {
+  mikeState = "closed";
+  dianeState = "closed";
+}
+
+void publishStates() {
+  pubSubClient.publish(MQTT_CLIENT_NAME"/mike/state", mikeState.c_str());
+  pubSubClient.publish(MQTT_CLIENT_NAME"/diane/state", dianeState.c_str());
 }
 
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
@@ -49,30 +72,47 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   Serial.println();
   newPayload.toCharArray(charPayload, newPayload.length() + 1);
 
-  //  Serial.print("Topic: ");
-  //  Serial.println(newTopic);
-  //  Serial.print("Payload: ");
-  //  Serial.println(newPayload);
-  //  Serial.print("CharPayload: ");
-  //  Serial.println(charPayload);
-  //  Serial.print("IntPayload: " );
-  //  Serial.println(intPayload);
+
+  //temporary - in place of sensors
+  if (newTopic == MQTT_CLIENT_NAME"/mike/sensoropen") {
+    mikeState = "open";
+  }
+  if (newTopic == MQTT_CLIENT_NAME"/mike/sensorclosed") {
+    mikeState = "closed";
+  }
+
 
   if (newTopic == MQTT_CLIENT_NAME"/mike/set") {
-    pubSubClient.publish(MQTT_CLIENT_NAME"/mike/state", charPayload);
-    
-    if (newPayload == "open") {
+    //allow opening - if the state is closed or moving
+    if (newPayload == "open" && ( mikeState == "closed" || mikeState == "moving")) {
       triggerMikeGarage();
-    }else if(newPayload == "close") {
+
+    //allow closing - if the state is opene or moving  
+    } else if (newPayload == "close" && ( mikeState == "open" || mikeState == "moving")) {
       triggerMikeGarage();
     }
-    
   }
+
+ if (newTopic == MQTT_CLIENT_NAME"/diane/set") {
+    //allow opening - if the state is closed or moving
+    if (newPayload == "open" && ( dianeState == "closed" || dianeState == "moving")) {
+      triggerDianeGarage();
+
+    //allow closing - if the state is opene or moving  
+    } else if (newPayload == "close" && ( dianeState == "open" || dianeState == "moving")) {
+      triggerDianeGarage();
+    }
+  }
+
+  publishStates();
 }
 
 void setupRelays() {
   pinMode(MIKEGARAGECONTACT, OUTPUT);
   digitalWrite(MIKEGARAGECONTACT, HIGH);
+  pinMode(DIANEGARAGECONTACT, OUTPUT);
+  digitalWrite(DIANEGARAGECONTACT, HIGH);
+
 }
 
 void setupOTA() {
@@ -146,6 +186,10 @@ void reconnect() {
           pubSubClient.publish(overwatchTopic, "Reconnected");
         }
         pubSubClient.subscribe(MQTT_CLIENT_NAME"/mike/set");
+        pubSubClient.subscribe(MQTT_CLIENT_NAME"/diane/set");
+        //temporary
+        pubSubClient.subscribe(MQTT_CLIENT_NAME"/mike/sensoropen");
+        pubSubClient.subscribe(MQTT_CLIENT_NAME"/mike/sensorclosed");
       } else {
         Serial.print("failed, rc=");
         Serial.print(pubSubClient.state());
@@ -163,7 +207,18 @@ void reconnect() {
 
 void triggerMikeGarage() {
   Serial.println("Trigger Mike Garage");
+  mikeState = "moving";
+
   digitalWrite(MIKEGARAGECONTACT, LOW);
   delay(250);
   digitalWrite(MIKEGARAGECONTACT, HIGH);
+}
+
+void triggerDianeGarage() {
+  Serial.println("Trigger Diane Garage");
+  dianeState = "moving";
+
+  digitalWrite(DIANEGARAGECONTACT, LOW);
+  delay(250);
+  digitalWrite(DIANEGARAGECONTACT, HIGH);
 }
