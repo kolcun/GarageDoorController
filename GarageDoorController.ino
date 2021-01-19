@@ -1,3 +1,7 @@
+//TODO
+//with only a single sensor at the close position, can only really know if the door is closed or open
+//can't use the 'moving' state until I get a second sensor at the top
+
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <PubSubClient.h>
@@ -7,6 +11,8 @@
 
 #define MIKEGARAGECONTACT D1
 #define DIANEGARAGECONTACT D2
+#define OPEN 1
+#define CLOSED 0
 #define HOSTNAME "GarageController"
 #define MQTT_CLIENT_NAME "kolcun/outdoor/garagedoorcontroller"
 
@@ -19,12 +25,27 @@ char charPayload[50];
 String mikeState = "UNKNOWN";
 String dianeState = "UNKNOWN";
 
+//const byte interruptPin = D6;
+//volatile byte interruptCounter = 0;
+//int numberOfInterrupts = 0;
+//long debouncing_time = 100; //Debouncing Time in Milliseconds
+//volatile unsigned long last_micros;
+
+//void ICACHE_RAM_ATTR handleInterrupt();
+
+////1=open 0=closed
+//int mikeSensorState = -1;
+//bool interruptOccured = false;
+
 WiFiClient wifiClient;
 PubSubClient pubSubClient(wifiClient);
 
 void setup() {
   Serial.begin(115200);
   Serial.println("Booting");
+
+//  pinMode(interruptPin, INPUT);
+//  attachInterrupt(digitalPinToInterrupt(interruptPin), handleInterrupt, CHANGE);
 
   setupOTA();
   setupMqtt();
@@ -44,15 +65,53 @@ void loop() {
   }
   pubSubClient.loop();
 
+//  if(interruptOccured){
+//    interruptOccured = false;
+//    publishStates();
+//  }
+
   //watch for sensor changes
   //update states based on sensor changes
 
+  //  if (interruptCounter > 0) {
+  //
+  //    interruptCounter--;
+  //    numberOfInterrupts++;
+  //
+  //    Serial.print("An interrupt has occurred. Total: ");
+  //    Serial.println(numberOfInterrupts);
+  //  }
 
 }
 
+//void ICACHE_RAM_ATTR handleInterrupt() {
+//  if ((long)(micros() - last_micros) >= debouncing_time * 1000) {
+//    //    garageClosed();
+//    Serial.println("interrupt");
+//    interruptOccured = true;
+//    if (mikeSensorState == OPEN) {
+//      mikeSensorState = CLOSED;
+//      mikeState = "closed";
+//    } else if (mikeSensorState == CLOSED) {
+//      mikeSensorState = OPEN;
+//      mikeState = "open";
+//    }
+//    last_micros = micros();
+//  }
+//
+//}
+
+
 void determineInitialState() {
-  mikeState = "closed";
   dianeState = "closed";
+  mikeState = "closed";
+//  mikeSensorState = digitalRead(interruptPin);
+//  if(mikeSensorState == CLOSED){
+//    mikeState = "closed";
+//  }else if (mikeSensorState == OPEN){
+//    mikeState = "open";
+//  }
+  
 }
 
 void publishStates() {
@@ -87,18 +146,18 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     if (newPayload == "open" && ( mikeState == "closed" || mikeState == "moving")) {
       triggerMikeGarage();
 
-    //allow closing - if the state is opene or moving  
+      //allow closing - if the state is opene or moving
     } else if (newPayload == "close" && ( mikeState == "open" || mikeState == "moving")) {
       triggerMikeGarage();
     }
   }
 
- if (newTopic == MQTT_CLIENT_NAME"/diane/set") {
+  if (newTopic == MQTT_CLIENT_NAME"/diane/set") {
     //allow opening - if the state is closed or moving
     if (newPayload == "open" && ( dianeState == "closed" || dianeState == "moving")) {
       triggerDianeGarage();
 
-    //allow closing - if the state is opene or moving  
+      //allow closing - if the state is opene or moving
     } else if (newPayload == "close" && ( dianeState == "open" || dianeState == "moving")) {
       triggerDianeGarage();
     }
