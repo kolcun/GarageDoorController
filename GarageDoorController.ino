@@ -72,19 +72,19 @@ void mikeDoorSensorClosed() {
 
 void mikeDoorSensorOpened() {
   mikeState = "open";
-  Serial.println("Mike Door Sensor Closed (door opening)");
+  Serial.println("Mike Door Sensor Opened (door opening)");
   publishStates();
 }
 
 void dianeDoorSensorClosed() {
   dianeState = "closed";
-  Serial.println("diane Door Sensor Closed (door closed)");
+  Serial.println("Diane Door Sensor Closed (door closed)");
   publishStates();
 }
 
 void dianeDoorSensorOpened() {
   dianeState = "open";
-  Serial.println("diane Door Sensor Closed (door opening)");
+  Serial.println("Diane Door Sensor Opened (door opening)");
   publishStates();
 }
 
