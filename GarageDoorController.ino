@@ -1,6 +1,4 @@
-//TODO
-//with only a single sensor at the close position, can only really know if the door is closed or open
-//can't use the 'moving' state until I get a second sensor at the top
+
 
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
@@ -12,8 +10,10 @@
 
 #define MIKEGARAGECONTACT D1
 #define DIANEGARAGECONTACT D2
-#define MIKEDOORSENSOR D6
-#define DIANEDOORSENSOR D7
+#define MIKEDOORSENSORCLOSEPOSITION D5
+#define DIANEDOORSENSORCLOSEPOSITION D6
+#define MIKEDOORSENSOROPENPOSITION D7
+#define DIANEDOORSENSOROPENPOSITION D8
 
 #define HOSTNAME "GarageController"
 #define MQTT_CLIENT_NAME "kolcun/outdoor/garagedoorcontroller"
@@ -24,12 +24,14 @@ const char* password = WIFI_PASSWD;
 const char* overwatchTopic = MQTT_CLIENT_NAME"/overwatch";
 
 char charPayload[50];
-String mikeState = "open";
-String dianeState = "open";
+String mikeState = "UNKNOWN";
+String dianeState = "UNKNOWN";
 
 WiFiClient wifiClient;
 PubSubClient pubSubClient(wifiClient);
-OneButton mikeDoorSensor(MIKEDOORSENSOR, false, false);
+OneButton mikeDoorSensorClosed(MIKEDOORSENSORCLOSEPOSITION, false, false);
+OneButton mikeDoorSensorOpen(MIKEDOORSENSOROPENPOSITION, false, false);
+
 //OneButton dianeDoorSensor(DIANEDOORSENSOR, false, false);
 
 void setup() {
@@ -49,44 +51,66 @@ void loop() {
   if (!pubSubClient.connected()) {
     reconnect();
   }
-  mikeDoorSensor.tick();
+  mikeDoorSensorClosed.tick();
+  mikeDoorSensorOpen.tick();
 //  dianeDoorSensor.tick();
   pubSubClient.loop();
 
 }
 
 void setupButtons() {
-  mikeDoorSensor.attachLongPressStart(mikeDoorSensorClosed);
-  mikeDoorSensor.attachLongPressStop(mikeDoorSensorOpened);
-  mikeDoorSensor.setPressTicks(300);
+  mikeDoorSensorClosed.attachLongPressStart(mikeDoorClosed);
+  mikeDoorSensorClosed.attachLongPressStop(mikeDoorOpening);
+  mikeDoorSensorClosed.setPressTicks(300);
+
+  mikeDoorSensorOpen.attachLongPressStart(mikeDoorOpen);
+  mikeDoorSensorOpen.attachLongPressStop(mikeDoorClosing);
+  mikeDoorSensorOpen.setPressTicks(300);
+  
 //  dianeDoorSensor.attachLongPressStart(dianeDoorSensorClosed);
 //  dianeDoorSensor.attachLongPressStop(dianeDoorSensorOpened);
 //  dianeDoorSensor.setPressTicks(300);
 }
 
-void mikeDoorSensorClosed() {
+//Door has closed - in down position, not moving
+void mikeDoorClosed() {
   mikeState = "closed";
-  Serial.println("Mike Door Sensor Closed (door closed)");
+  Serial.println("Mike Door Closed");
   publishStates();
 }
 
-void mikeDoorSensorOpened() {
+//Door has started opening - in down position, moving up
+void mikeDoorOpening(){
+  mikeState = "moving-opening";
+  Serial.println("Mike Door Opening - moving up");
+  publishStates();
+}
+
+//Door has opened - in up position, not moving.
+void mikeDoorOpen() {
   mikeState = "open";
-  Serial.println("Mike Door Sensor Opened (door opening)");
+  Serial.println("Mike Door Open");
   publishStates();
 }
 
-void dianeDoorSensorClosed() {
-  dianeState = "closed";
-  Serial.println("Diane Door Sensor Closed (door closed)");
+//Door has started closing - in up position, moving down
+void mikeDoorClosing(){
+  mikeState = "moving-closing";
+  Serial.println("Mike Door Closing - moving down");
   publishStates();
 }
 
-void dianeDoorSensorOpened() {
-  dianeState = "open";
-  Serial.println("Diane Door Sensor Opened (door opening)");
-  publishStates();
-}
+//void dianeDoorSensorClosed() {
+//  dianeState = "closed";
+//  Serial.println("Diane Door Sensor Closed (door closed)");
+//  publishStates();
+//}
+//
+//void dianeDoorSensorOpened() {
+//  dianeState = "open";
+//  Serial.println("Diane Door Sensor Opened (door opening)");
+//  publishStates();
+//}
 
 void publishStates() {
   pubSubClient.publish(MQTT_CLIENT_NAME"/mike/state", mikeState.c_str());
