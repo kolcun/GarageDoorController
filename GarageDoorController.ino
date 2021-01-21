@@ -31,15 +31,15 @@ WiFiClient wifiClient;
 PubSubClient pubSubClient(wifiClient);
 OneButton mikeDoorSensorClosed(MIKEDOORSENSORCLOSEPOSITION, false, false);
 OneButton mikeDoorSensorOpen(MIKEDOORSENSOROPENPOSITION, false, false);
-
-//OneButton dianeDoorSensor(DIANEDOORSENSOR, false, false);
+OneButton dianeDoorSensorClosed(DIANEDOORSENSORCLOSEPOSITION, false, false);
+OneButton dianeDoorSensorOpen(DIANEDOORSENSOROPENPOSITION, false, false);
 
 void setup() {
   Serial.begin(115200);
   Serial.println("Booting");
 
-  setupButtons();
   setupOTA();
+  setupButtons();
   setupMqtt();
   setupRelays();
   publishStates();
@@ -53,7 +53,8 @@ void loop() {
   }
   mikeDoorSensorClosed.tick();
   mikeDoorSensorOpen.tick();
-//  dianeDoorSensor.tick();
+  dianeDoorSensorClosed.tick();
+  dianeDoorSensorOpen.tick();
   pubSubClient.loop();
 
 }
@@ -67,9 +68,13 @@ void setupButtons() {
   mikeDoorSensorOpen.attachLongPressStop(mikeDoorClosing);
   mikeDoorSensorOpen.setPressTicks(300);
   
-//  dianeDoorSensor.attachLongPressStart(dianeDoorSensorClosed);
-//  dianeDoorSensor.attachLongPressStop(dianeDoorSensorOpened);
-//  dianeDoorSensor.setPressTicks(300);
+  dianeDoorSensorClosed.attachLongPressStart(dianeDoorClosed);
+  dianeDoorSensorClosed.attachLongPressStop(dianeDoorOpening);
+  dianeDoorSensorClosed.setPressTicks(300);
+
+  dianeDoorSensorOpen.attachLongPressStart(dianeDoorOpen);
+  dianeDoorSensorOpen.attachLongPressStop(dianeDoorClosing);
+  dianeDoorSensorOpen.setPressTicks(300);
 }
 
 //Door has closed - in down position, not moving
@@ -100,17 +105,33 @@ void mikeDoorClosing(){
   publishStates();
 }
 
-//void dianeDoorSensorClosed() {
-//  dianeState = "closed";
-//  Serial.println("Diane Door Sensor Closed (door closed)");
-//  publishStates();
-//}
-//
-//void dianeDoorSensorOpened() {
-//  dianeState = "open";
-//  Serial.println("Diane Door Sensor Opened (door opening)");
-//  publishStates();
-//}
+//Door has closed - in down position, not moving
+void dianeDoorClosed() {
+  dianeState = "closed";
+  Serial.println("Diane Door Closed");
+  publishStates();
+}
+
+//Door has started opening - in down position, moving up
+void dianeDoorOpening(){
+  dianeState = "moving-opening";
+  Serial.println("Diane Door Opening - moving up");
+  publishStates();
+}
+
+//Door has opened - in up position, not moving.
+void dianeDoorOpen() {
+  dianeState = "open";
+  Serial.println("Diane Door Open");
+  publishStates();
+}
+
+//Door has started closing - in up position, moving down
+void dianeDoorClosing(){
+  dianeState = "moving-closing";
+  Serial.println("Diane Door Closing - moving down");
+  publishStates();
+}
 
 void publishStates() {
   pubSubClient.publish(MQTT_CLIENT_NAME"/mike/state", mikeState.c_str());
@@ -260,19 +281,3 @@ void triggerDianeGarage() {
   delay(250);
   digitalWrite(DIANEGARAGECONTACT, HIGH);
 }
-
-//void flipMikeState() {
-//  if (mikeState == "open") {
-//    mikeState = "closed";
-//  } else if (mikeState = "closed") {
-//    mikeState = "open";
-//  }
-//}
-//
-//void flipDianeState() {
-//  if (dianeState == "open") {
-//    dianeState = "closed";
-//  } else if (dianeState = "closed") {
-//    dianeState = "open";
-//  }
-//}
