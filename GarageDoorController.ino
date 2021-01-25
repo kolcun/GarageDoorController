@@ -10,10 +10,10 @@
 
 #define MIKEGARAGECONTACT D1
 #define DIANEGARAGECONTACT D2
-#define MIKEDOORSENSORCLOSEPOSITION D5
-#define DIANEDOORSENSORCLOSEPOSITION D6
-#define MIKEDOORSENSOROPENPOSITION D7
-#define DIANEDOORSENSOROPENPOSITION D8
+#define MIKEDOORSENSORCLOSEPOSITION D7
+#define DIANEDOORSENSORCLOSEPOSITION D0
+#define MIKEDOORSENSOROPENPOSITION D5
+#define DIANEDOORSENSOROPENPOSITION D6
 
 #define HOSTNAME "GarageController"
 #define MQTT_CLIENT_NAME "kolcun/outdoor/garagedoorcontroller"
@@ -134,8 +134,8 @@ void dianeDoorClosing(){
 }
 
 void publishStates() {
-  pubSubClient.publish(MQTT_CLIENT_NAME"/mike/state", mikeState.c_str());
-  pubSubClient.publish(MQTT_CLIENT_NAME"/diane/state", dianeState.c_str());
+  pubSubClient.publish(MQTT_CLIENT_NAME"/mike/state", (uint8_t*) mikeState.c_str(), mikeState.length(), true);
+  pubSubClient.publish(MQTT_CLIENT_NAME"/diane/state", (uint8_t*) dianeState.c_str(), dianeState.length(), true);
 }
 
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
