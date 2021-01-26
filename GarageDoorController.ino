@@ -79,7 +79,7 @@ void setupButtons() {
 
 //Door has closed - in down position, not moving
 void mikeDoorClosed() {
-  mikeState = "closed";
+  mikeState = "close";
   Serial.println("Mike Door Closed");
   publishStates();
 }
@@ -107,7 +107,7 @@ void mikeDoorClosing(){
 
 //Door has closed - in down position, not moving
 void dianeDoorClosed() {
-  dianeState = "closed";
+  dianeState = "close";
   Serial.println("Diane Door Closed");
   publishStates();
 }
@@ -152,7 +152,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
   if (newTopic == MQTT_CLIENT_NAME"/mike/set") {
     //allow opening - if the state is closed
-    if (newPayload == "open" && mikeState == "closed") {
+    if (newPayload == "open" && mikeState == "close") {
       triggerMikeGarage();
 
       //allow closing - if the state is open
@@ -163,7 +163,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
   if (newTopic == MQTT_CLIENT_NAME"/diane/set") {
     //allow opening - if the state is closed
-    if (newPayload == "open" && dianeState == "closed") {
+    if (newPayload == "open" && dianeState == "close") {
       triggerDianeGarage();
 
       //allow closing - if the state is open
