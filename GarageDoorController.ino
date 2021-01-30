@@ -62,102 +62,81 @@ void loop() {
 void setupButtons() {
   mikeDoorSensorClosed.attachLongPressStart(mikeDoorClosed);
   mikeDoorSensorClosed.attachLongPressStop(mikeDoorOpening);
-  mikeDoorSensorClosed.setDebounceTicks(300);
-  mikeDoorSensorClosed.setPressTicks(2000);
+  mikeDoorSensorClosed.setPressTicks(300);
 
   mikeDoorSensorOpen.attachLongPressStart(mikeDoorOpen);
   mikeDoorSensorOpen.attachLongPressStop(mikeDoorClosing);
-  mikeDoorSensorOpen.setDebounceTicks(300);
-  mikeDoorSensorOpen.setPressTicks(2000);
-
+  mikeDoorSensorOpen.setPressTicks(300);
+  
   dianeDoorSensorClosed.attachLongPressStart(dianeDoorClosed);
   dianeDoorSensorClosed.attachLongPressStop(dianeDoorOpening);
-  dianeDoorSensorClosed.setDebounceTicks(300);
-  dianeDoorSensorClosed.setPressTicks(2000);
+  dianeDoorSensorClosed.setPressTicks(300);
 
   dianeDoorSensorOpen.attachLongPressStart(dianeDoorOpen);
   dianeDoorSensorOpen.attachLongPressStop(dianeDoorClosing);
-  dianeDoorSensorOpen.setDebounceTicks(300);
-  dianeDoorSensorOpen.setPressTicks(2000);
+  dianeDoorSensorOpen.setPressTicks(300);
 }
 
 //Door has closed - in down position, not moving
 void mikeDoorClosed() {
-  pubSubClient.publish(overwatchTopic, "mikeDoorClosed()");
   mikeState = "close";
   Serial.println("Mike Door Closed");
-  publishMikeState();
+  publishStates();
 }
 
 //Door has started opening - in down position, moving up
-void mikeDoorOpening() {
-  pubSubClient.publish(overwatchTopic, "mikeDoorOpening()");
+void mikeDoorOpening(){
   mikeState = "moving-opening";
   Serial.println("Mike Door Opening - moving up");
-  publishMikeState();
+  publishStates();
 }
 
 //Door has opened - in up position, not moving.
 void mikeDoorOpen() {
-  pubSubClient.publish(overwatchTopic, "mikeDoorOpen()");
   mikeState = "open";
   Serial.println("Mike Door Open");
-  publishMikeState();
+  publishStates();
 }
 
 //Door has started closing - in up position, moving down
-void mikeDoorClosing() {
-  pubSubClient.publish(overwatchTopic, "mikeDoorClosing()");
+void mikeDoorClosing(){
   mikeState = "moving-closing";
   Serial.println("Mike Door Closing - moving down");
-  publishMikeState();
+  publishStates();
 }
 
 //Door has closed - in down position, not moving
 void dianeDoorClosed() {
-  pubSubClient.publish(overwatchTopic, "dianeDoorClosed()");
   dianeState = "close";
   Serial.println("Diane Door Closed");
-  publishDianeState();
+  publishStates();
 }
 
 //Door has started opening - in down position, moving up
-void dianeDoorOpening() {
-  pubSubClient.publish(overwatchTopic, "dianeDoorOpening()");
+void dianeDoorOpening(){
   dianeState = "moving-opening";
   Serial.println("Diane Door Opening - moving up");
-  publishDianeState();
+  publishStates();
 }
 
 //Door has opened - in up position, not moving.
 void dianeDoorOpen() {
-  pubSubClient.publish(overwatchTopic, "dianeDoorOpen()");
   dianeState = "open";
   Serial.println("Diane Door Open");
-  publishDianeState();
+  publishStates();
 }
 
 //Door has started closing - in up position, moving down
-void dianeDoorClosing() {
-  pubSubClient.publish(overwatchTopic, "dianeDoorClosing()");
+void dianeDoorClosing(){
   dianeState = "moving-closing";
   Serial.println("Diane Door Closing - moving down");
-  publishDianeState();
+  publishStates();
 }
 
 void publishStates() {
-  publishMikeState();
-  publishDianeState();
-}
-
-void publishMikeState() {
   pubSubClient.publish(MQTT_CLIENT_NAME"/mike/state", (uint8_t*) mikeState.c_str(), mikeState.length(), true);
-}
-
-void publishDianeState() {
   pubSubClient.publish(MQTT_CLIENT_NAME"/diane/state", (uint8_t*) dianeState.c_str(), dianeState.length(), true);
 }
-
 
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
@@ -171,42 +150,25 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   Serial.println();
   newPayload.toCharArray(charPayload, newPayload.length() + 1);
 
-  //temp
-  if (newTopic == MQTT_CLIENT_NAME"/mike/REQ") {
-    if (newPayload == "request-status") {
-      publishStates();
-    }
-  }
-
   if (newTopic == MQTT_CLIENT_NAME"/mike/set") {
     //allow opening - if the state is closed
     if (newPayload == "open" && mikeState == "close") {
-      pubSubClient.publish(overwatchTopic, "Trigger Mike Garage - opening");
       triggerMikeGarage();
 
       //allow closing - if the state is open
     } else if (newPayload == "close" && mikeState == "open") {
-      pubSubClient.publish(overwatchTopic, "Trigger Mike Garage - closing");
       triggerMikeGarage();
-    } else {
-      pubSubClient.publish(overwatchTopic, "Trigger Mike Garage - no trigger - bad state");
-      pubSubClient.publish(overwatchTopic, mikeState.c_str());
     }
   }
 
   if (newTopic == MQTT_CLIENT_NAME"/diane/set") {
     //allow opening - if the state is closed
     if (newPayload == "open" && dianeState == "close") {
-      pubSubClient.publish(overwatchTopic, "Trigger Diane Garage - opening");
       triggerDianeGarage();
 
       //allow closing - if the state is open
     } else if (newPayload == "close" && dianeState == "open" ) {
-      pubSubClient.publish(overwatchTopic, "Trigger Diane Garage - closing");
       triggerDianeGarage();
-    } else {
-      pubSubClient.publish(overwatchTopic, "Trigger Diane Garage - no trigger - bad state");
-      pubSubClient.publish(overwatchTopic, dianeState.c_str());
     }
   }
 }
@@ -291,7 +253,6 @@ void reconnect() {
         }
         pubSubClient.subscribe(MQTT_CLIENT_NAME"/mike/set");
         pubSubClient.subscribe(MQTT_CLIENT_NAME"/diane/set");
-        pubSubClient.subscribe(MQTT_CLIENT_NAME"/mike/REQ");
       } else {
         Serial.print("failed, rc=");
         Serial.print(pubSubClient.state());
