@@ -81,60 +81,68 @@ void setupButtons() {
 void mikeDoorClosed() {
   mikeState = "close";
   Serial.println("Mike Door Closed");
-  publishStates();
+  publishMikeState();
 }
 
 //Door has started opening - in down position, moving up
 void mikeDoorOpening(){
   mikeState = "moving-opening";
   Serial.println("Mike Door Opening - moving up");
-  publishStates();
+  publishMikeState();
 }
 
 //Door has opened - in up position, not moving.
 void mikeDoorOpen() {
   mikeState = "open";
   Serial.println("Mike Door Open");
-  publishStates();
+  publishMikeState();
 }
 
 //Door has started closing - in up position, moving down
 void mikeDoorClosing(){
   mikeState = "moving-closing";
   Serial.println("Mike Door Closing - moving down");
-  publishStates();
+  publishMikeState();
 }
 
 //Door has closed - in down position, not moving
 void dianeDoorClosed() {
   dianeState = "close";
   Serial.println("Diane Door Closed");
-  publishStates();
+  publishDianeState();
 }
 
 //Door has started opening - in down position, moving up
 void dianeDoorOpening(){
   dianeState = "moving-opening";
   Serial.println("Diane Door Opening - moving up");
-  publishStates();
+  publishDianeState();
 }
 
 //Door has opened - in up position, not moving.
 void dianeDoorOpen() {
   dianeState = "open";
   Serial.println("Diane Door Open");
-  publishStates();
+  publishDianeState();
 }
 
 //Door has started closing - in up position, moving down
 void dianeDoorClosing(){
   dianeState = "moving-closing";
   Serial.println("Diane Door Closing - moving down");
-  publishStates();
+  publishDianeState();
 }
 
 void publishStates() {
+  publishMikeState();
+  publishDianeState();
+}
+
+void publishMikeState() {
   pubSubClient.publish(MQTT_CLIENT_NAME"/mike/state", (uint8_t*) mikeState.c_str(), mikeState.length(), true);
+}
+
+void publishDianeState() {
   pubSubClient.publish(MQTT_CLIENT_NAME"/diane/state", (uint8_t*) dianeState.c_str(), dianeState.length(), true);
 }
 
