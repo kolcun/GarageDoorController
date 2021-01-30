@@ -1,10 +1,4 @@
-//issue seems to be
-// when the open sensor (reed switch on motor) is not activated (door in closed position, no magnet, switch is open) the esp bounches back and froth betwen that sensor showing open/closed
-// almost like it's floating -however it's tied to ground through a 10k resistor
 
-//try removing the switch from the equation - just have the bare wires and touch/open them.
-
-//try to have the code not use the button, and just output the direct read of the pin (digital) to mqtt for diag
 
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
@@ -30,8 +24,8 @@ const char* password = WIFI_PASSWD;
 const char* overwatchTopic = MQTT_CLIENT_NAME"/overwatch";
 
 char charPayload[50];
-String mikeState = "open";
-String dianeState = "open";
+String mikeState = "UNKNOWN";
+String dianeState = "UNKNOWN";
 
 WiFiClient wifiClient;
 PubSubClient pubSubClient(wifiClient);
@@ -57,27 +51,11 @@ void loop() {
   if (!pubSubClient.connected()) {
     reconnect();
   }
-  //  mikeDoorSensorClosed.tick();
-    mikeDoorSensorOpen.tick();
-  //  dianeDoorSensorClosed.tick();
+  mikeDoorSensorClosed.tick();
+  mikeDoorSensorOpen.tick();
+  dianeDoorSensorClosed.tick();
   dianeDoorSensorOpen.tick();
   pubSubClient.loop();
-
-  int x = digitalRead(DIANEDOORSENSOROPENPOSITION);
-  if (x == HIGH) {
-    pubSubClient.publish(overwatchTopic, "d6 DIANE HIGH");
-  } else if (x == LOW) {
-    pubSubClient.publish(overwatchTopic, "                   d6 DIANE LOW");
-  }
-
-  int y = digitalRead(MIKEDOORSENSOROPENPOSITION);
-  if (y == HIGH) {
-    pubSubClient.publish(overwatchTopic, "                                d5 MIKE HIGH");
-  } else if (y == LOW) {
-    pubSubClient.publish(overwatchTopic, "                                                  d5 MIKE LOW");
-  }
-
-  delay(500);
 
 }
 
