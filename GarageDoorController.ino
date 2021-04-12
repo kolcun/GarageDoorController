@@ -1,19 +1,19 @@
 
 
-#include <ESP8266WiFi.h>
-#include <ESP8266mDNS.h>
+#include <WiFi.h>
+#include <ESPmDNS.h>
 #include <PubSubClient.h>
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 #include <OneButton.h>
 #include "credentials.h"
 
-#define MIKEGARAGECONTACT D1
-#define DIANEGARAGECONTACT D2
-#define MIKEDOORSENSORCLOSEPOSITION D7
-#define DIANEDOORSENSORCLOSEPOSITION D0
-#define MIKEDOORSENSOROPENPOSITION D5
-#define DIANEDOORSENSOROPENPOSITION D6
+#define MIKEGARAGECONTACT 4
+#define DIANEGARAGECONTACT 5
+#define MIKEDOORSENSORCLOSEPOSITION 17
+#define DIANEDOORSENSORCLOSEPOSITION 17
+#define MIKEDOORSENSOROPENPOSITION 18
+#define DIANEDOORSENSOROPENPOSITION 19
 
 #define HOSTNAME "GarageController"
 #define MQTT_CLIENT_NAME "kolcun/outdoor/garagedoorcontroller"
