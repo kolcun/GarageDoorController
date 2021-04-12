@@ -166,6 +166,9 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       //allow closing - if the state is open
     } else if (newPayload == "close" && mikeState == "open") {
       triggerMikeGarage();
+    //allow force trigering  
+    } else if (newPayload == "force") {
+      triggerMikeGarage();
     }
   }
 
@@ -176,6 +179,9 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
       //allow closing - if the state is open
     } else if (newPayload == "close" && dianeState == "open" ) {
+      triggerDianeGarage();
+    //allow force trigering  
+    } else if (newPayload == "force") {
       triggerDianeGarage();
     }
   }
