@@ -81,14 +81,15 @@ void readTemperature() {
   sensors.requestTemperatures(); // Send the command to get temperatures
   //  Serial.println("DONE");
   float currentTempC = sensors.getTempCByIndex(0);
-//  float currentTempF = sensors.getTempFByIndex(0);
+  //  float currentTempF = sensors.getTempFByIndex(0);
   Serial.print("Temperature C is: ");
   Serial.println(currentTempC);
-//  Serial.print("Temperature F is: ");
-//  Serial.println(currentTempF);
+  //  Serial.print("Temperature F is: ");
+  //  Serial.println(currentTempF);
 
-//  pubSubClient.publish(temperatureTopic, String(currentTempC).c_str());
-  pubSubClient.publish(temperatureTopic, String(currentTempC).c_str(), String(currentTempC).length(), true);
+  //  pubSubClient.publish(temperatureTopic, String(currentTempC).c_str());
+  String tempStr = String(currentTempC);
+  pubSubClient.publish(temperatureTopic, (uint8_t*) tempStr.c_str(), tempStr.length(), true);
 }
 
 void setupTemperature() {
@@ -201,12 +202,11 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   newPayload.toCharArray(charPayload, newPayload.length() + 1);
 
   if (newTopic == MQTT_CLIENT_NAME"/mike/set") {
-    //allow opening - if the state is closed
-    if (newPayload == "open" && mikeState == "close") {
+    //allow opening - if the state is not open (allows operating it if the garge is in an in-between state)
+    if (newPayload == "open" && mikeState != "open") {
       triggerMikeGarage();
-
-      //allow closing - if the state is open
-    } else if (newPayload == "close" && mikeState == "open") {
+      //allow closing - if the state is not closed (allows operating it if the garge is in an in-between state)
+    } else if (newPayload == "close" && mikeState != "close") {
       triggerMikeGarage();
       //allow force trigering
     } else if (newPayload == "force") {
@@ -215,12 +215,11 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   }
 
   if (newTopic == MQTT_CLIENT_NAME"/diane/set") {
-    //allow opening - if the state is closed
-    if (newPayload == "open" && dianeState == "close") {
+    //allow opening - if the state is not open (allows operating it if the garge is in an in-between state)
+    if (newPayload == "open" && dianeState != "open") {
       triggerDianeGarage();
-
-      //allow closing - if the state is open
-    } else if (newPayload == "close" && dianeState == "open" ) {
+      //allow closing - if the state is not closed (allows operating it if the garge is in an in-between state)
+    } else if (newPayload == "close" && dianeState != "close" ) {
       triggerDianeGarage();
       //allow force trigering
     } else if (newPayload == "force") {
