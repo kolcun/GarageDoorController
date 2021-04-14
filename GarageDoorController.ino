@@ -6,14 +6,18 @@
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 #include <OneButton.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <AsyncDelay.h>
 #include "credentials.h"
 
-#define MIKEGARAGECONTACT 4
-#define DIANEGARAGECONTACT 5
-#define MIKEDOORSENSORCLOSEPOSITION 17
-#define DIANEDOORSENSORCLOSEPOSITION 17
-#define MIKEDOORSENSOROPENPOSITION 18
+#define MIKEGARAGECONTACT 27
+#define DIANEGARAGECONTACT 25
+#define MIKEDOORSENSORCLOSEPOSITION 4
+#define DIANEDOORSENSORCLOSEPOSITION 5
+#define MIKEDOORSENSOROPENPOSITION 16
 #define DIANEDOORSENSOROPENPOSITION 19
+#define TEMPERATURE_PIN 32
 
 #define HOSTNAME "GarageController"
 #define MQTT_CLIENT_NAME "kolcun/outdoor/garagedoorcontroller"
@@ -22,6 +26,7 @@ const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWD;
 
 const char* overwatchTopic = MQTT_CLIENT_NAME"/overwatch";
+const char* temperatureTopic = MQTT_CLIENT_NAME"/temperature/state";
 
 char charPayload[50];
 String mikeState = "UNKNOWN";
@@ -29,10 +34,14 @@ String dianeState = "UNKNOWN";
 
 WiFiClient wifiClient;
 PubSubClient pubSubClient(wifiClient);
-OneButton mikeDoorSensorClosed(MIKEDOORSENSORCLOSEPOSITION, false, false);
-OneButton mikeDoorSensorOpen(MIKEDOORSENSOROPENPOSITION, false, false);
-OneButton dianeDoorSensorClosed(DIANEDOORSENSORCLOSEPOSITION, false, false);
-OneButton dianeDoorSensorOpen(DIANEDOORSENSOROPENPOSITION, false, false);
+OneButton mikeDoorSensorClosed(MIKEDOORSENSORCLOSEPOSITION, true, true);
+OneButton mikeDoorSensorOpen(MIKEDOORSENSOROPENPOSITION, true, true);
+OneButton dianeDoorSensorClosed(DIANEDOORSENSORCLOSEPOSITION, true, true);
+OneButton dianeDoorSensorOpen(DIANEDOORSENSOROPENPOSITION, true, true);
+
+OneWire oneWire(TEMPERATURE_PIN);
+DallasTemperature sensors(&oneWire);
+AsyncDelay delay60s;
 
 void setup() {
   Serial.begin(115200);
@@ -43,11 +52,17 @@ void setup() {
   setupMqtt();
   setupRelays();
   publishStates();
+  setupTemperature();
 
 }
 
 void loop() {
   ArduinoOTA.handle();
+  if (delay60s.isExpired()) {
+    readTemperature();
+    delay60s.repeat();
+  }
+
   if (!pubSubClient.connected()) {
     reconnect();
   }
@@ -59,6 +74,33 @@ void loop() {
 
 }
 
+void readTemperature() {
+  // call sensors.requestTemperatures() to issue a global temperature
+  // request to all devices on the bus
+  //  Serial.print(" Requesting temperatures...");
+  sensors.requestTemperatures(); // Send the command to get temperatures
+  //  Serial.println("DONE");
+  float currentTempC = sensors.getTempCByIndex(0);
+//  float currentTempF = sensors.getTempFByIndex(0);
+  Serial.print("Temperature C is: ");
+  Serial.println(currentTempC);
+//  Serial.print("Temperature F is: ");
+//  Serial.println(currentTempF);
+
+//  pubSubClient.publish(temperatureTopic, String(currentTempC).c_str());
+  pubSubClient.publish(temperatureTopic, String(currentTempC).c_str(), String(currentTempC).length(), true);
+}
+
+void setupTemperature() {
+  pinMode(TEMPERATURE_PIN, INPUT);
+  delay60s.start(60000, AsyncDelay::MILLIS);
+  //first time seems to be slightly off
+  sensors.requestTemperatures();
+  delay(1000);
+  sensors.requestTemperatures();
+  readTemperature();
+}
+
 void setupButtons() {
   mikeDoorSensorClosed.attachLongPressStart(mikeDoorClosed);
   mikeDoorSensorClosed.attachLongPressStop(mikeDoorOpening);
@@ -67,7 +109,7 @@ void setupButtons() {
   mikeDoorSensorOpen.attachLongPressStart(mikeDoorOpen);
   mikeDoorSensorOpen.attachLongPressStop(mikeDoorClosing);
   mikeDoorSensorOpen.setPressTicks(300);
-  
+
   dianeDoorSensorClosed.attachLongPressStart(dianeDoorClosed);
   dianeDoorSensorClosed.attachLongPressStop(dianeDoorOpening);
   dianeDoorSensorClosed.setPressTicks(300);
@@ -85,7 +127,7 @@ void mikeDoorClosed() {
 }
 
 //Door has started opening - in down position, moving up
-void mikeDoorOpening(){
+void mikeDoorOpening() {
   mikeState = "moving-opening";
   Serial.println("Mike Door Opening - moving up");
   publishMikeState();
@@ -99,7 +141,7 @@ void mikeDoorOpen() {
 }
 
 //Door has started closing - in up position, moving down
-void mikeDoorClosing(){
+void mikeDoorClosing() {
   mikeState = "moving-closing";
   Serial.println("Mike Door Closing - moving down");
   publishMikeState();
@@ -113,7 +155,7 @@ void dianeDoorClosed() {
 }
 
 //Door has started opening - in down position, moving up
-void dianeDoorOpening(){
+void dianeDoorOpening() {
   dianeState = "moving-opening";
   Serial.println("Diane Door Opening - moving up");
   publishDianeState();
@@ -127,7 +169,7 @@ void dianeDoorOpen() {
 }
 
 //Door has started closing - in up position, moving down
-void dianeDoorClosing(){
+void dianeDoorClosing() {
   dianeState = "moving-closing";
   Serial.println("Diane Door Closing - moving down");
   publishDianeState();
@@ -166,7 +208,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       //allow closing - if the state is open
     } else if (newPayload == "close" && mikeState == "open") {
       triggerMikeGarage();
-    //allow force trigering  
+      //allow force trigering
     } else if (newPayload == "force") {
       triggerMikeGarage();
     }
@@ -180,7 +222,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       //allow closing - if the state is open
     } else if (newPayload == "close" && dianeState == "open" ) {
       triggerDianeGarage();
-    //allow force trigering  
+      //allow force trigering
     } else if (newPayload == "force") {
       triggerDianeGarage();
     }
