@@ -183,10 +183,12 @@ void publishStates() {
 
 void publishMikeState() {
   pubSubClient.publish(MQTT_CLIENT_NAME"/mike/state", (uint8_t*) mikeState.c_str(), mikeState.length(), true);
+  pubSubClient.publish("kolcun/garage-test/mike/state", (uint8_t*) mikeState.c_str(), mikeState.length(), true);
 }
 
 void publishDianeState() {
   pubSubClient.publish(MQTT_CLIENT_NAME"/diane/state", (uint8_t*) dianeState.c_str(), dianeState.length(), true);
+  pubSubClient.publish("kolcun/garage-test/diane/state", (uint8_t*) dianeState.c_str(), dianeState.length(), true);
 }
 
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
