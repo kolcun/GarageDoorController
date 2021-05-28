@@ -16,7 +16,8 @@
 #define MIKEDOORSENSORCLOSEPOSITION 4
 #define DIANEDOORSENSORCLOSEPOSITION 5
 #define MIKEDOORSENSOROPENPOSITION 16
-#define DIANEDOORSENSOROPENPOSITION 19
+#define DIANEDOORSENSOROPENPOSITION 32
+
 #define TEMPERATURE_PIN 32
 
 #define HOSTNAME "GarageController"
@@ -184,11 +185,20 @@ void publishStates() {
 void publishMikeState() {
   pubSubClient.publish(MQTT_CLIENT_NAME"/mike/state", (uint8_t*) mikeState.c_str(), mikeState.length(), true);
   pubSubClient.publish("kolcun/garage-test/mike/state", (uint8_t*) mikeState.c_str(), mikeState.length(), true);
+  mikeDebug(mikeState);
 }
 
 void publishDianeState() {
   pubSubClient.publish(MQTT_CLIENT_NAME"/diane/state", (uint8_t*) dianeState.c_str(), dianeState.length(), true);
   pubSubClient.publish("kolcun/garage-test/diane/state", (uint8_t*) dianeState.c_str(), dianeState.length(), true);
+  dianeDebug(dianeState);
+}
+
+void dianeDebug(String msg){
+  pubSubClient.publish("kolcun/diane-debug", (uint8_t*) msg.c_str(), msg.length(), true);
+}
+void mikeDebug(String msg){
+  pubSubClient.publish("kolcun/mike-debug", (uint8_t*) msg.c_str(), msg.length(), true);
 }
 
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
@@ -330,6 +340,7 @@ void triggerMikeGarage() {
   digitalWrite(MIKEGARAGECONTACT, LOW);
   delay(250);
   digitalWrite(MIKEGARAGECONTACT, HIGH);
+  mikeDebug("garage-trigger");
 }
 
 void triggerDianeGarage() {
@@ -337,4 +348,5 @@ void triggerDianeGarage() {
   digitalWrite(DIANEGARAGECONTACT, LOW);
   delay(250);
   digitalWrite(DIANEGARAGECONTACT, HIGH);
+  dianeDebug("garage-trigger");
 }
