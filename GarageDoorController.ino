@@ -35,8 +35,8 @@ WiFiClient wifiClient;
 PubSubClient pubSubClient(wifiClient);
 OneButton mikeDoorSensorClosed(MIKEDOORSENSORCLOSEPOSITION, true, true);
 OneButton mikeDoorSensorOpen(MIKEDOORSENSOROPENPOSITION, true, true);
-OneButton dianeDoorSensorClosed(DIANEDOORSENSORCLOSEPOSITION, true, true);
-OneButton dianeDoorSensorOpen(DIANEDOORSENSOROPENPOSITION, true, true);
+//OneButton dianeDoorSensorClosed(DIANEDOORSENSORCLOSEPOSITION, true, true);
+//OneButton dianeDoorSensorOpen(DIANEDOORSENSOROPENPOSITION, true, true);
 
 OneWire oneWire(TEMPERATURE_PIN);
 DallasTemperature sensors(&oneWire);
@@ -67,8 +67,8 @@ void loop() {
   }
   mikeDoorSensorClosed.tick();
   mikeDoorSensorOpen.tick();
-  dianeDoorSensorClosed.tick();
-  dianeDoorSensorOpen.tick();
+  //dianeDoorSensorClosed.tick();
+  //dianeDoorSensorOpen.tick();
   pubSubClient.loop();
 
 }
@@ -110,13 +110,13 @@ void setupButtons() {
   mikeDoorSensorOpen.attachLongPressStop(mikeDoorClosing);
   mikeDoorSensorOpen.setPressTicks(300);
 
-  dianeDoorSensorClosed.attachLongPressStart(dianeDoorClosed);
-  dianeDoorSensorClosed.attachLongPressStop(dianeDoorOpening);
-  dianeDoorSensorClosed.setPressTicks(300);
+  //dianeDoorSensorClosed.attachLongPressStart(dianeDoorClosed);
+  //dianeDoorSensorClosed.attachLongPressStop(dianeDoorOpening);
+  //dianeDoorSensorClosed.setPressTicks(300);
 
-  dianeDoorSensorOpen.attachLongPressStart(dianeDoorOpen);
-  dianeDoorSensorOpen.attachLongPressStop(dianeDoorClosing);
-  dianeDoorSensorOpen.setPressTicks(300);
+  //dianeDoorSensorOpen.attachLongPressStart(dianeDoorOpen);
+  //dianeDoorSensorOpen.attachLongPressStop(dianeDoorClosing);
+  //dianeDoorSensorOpen.setPressTicks(300);
 }
 
 //Door has closed - in down position, not moving
@@ -213,6 +213,17 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     }
   }
 
+  if (newTopic == "kolcun/zigbee2mqtt/DianeGarageOpenSensor/contact") {
+     if (newPayload == "true"){
+       dianeState = "open";
+       publishDianeState();
+     }
+     if (newPayload == "false"){
+       dianeState = "close";
+       publishDianeState();
+     }
+  }
+
   if (newTopic == MQTT_CLIENT_NAME"/diane/set") {
     //allow opening - if the state is not open (allows operating it if the garge is in an in-between state)
     if (newPayload == "open" && dianeState != "open") {
@@ -307,6 +318,7 @@ void reconnect() {
         }
         pubSubClient.subscribe(MQTT_CLIENT_NAME"/mike/set");
         pubSubClient.subscribe(MQTT_CLIENT_NAME"/diane/set");
+        pubSubClient.subscribe("kolcun/zigbee2mqtt/DianeGarageOpenSensor/contact");
       } else {
         Serial.print("failed, rc=");
         Serial.print(pubSubClient.state());
