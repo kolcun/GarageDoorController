@@ -215,12 +215,19 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
   if (newTopic == "kolcun/zigbee2mqtt/DianeGarageOpenSensor/contact") {
      if (newPayload == "true"){
-       dianeState = "open";
-       publishDianeState();
+       dianeDoorOpen();
      }
      if (newPayload == "false"){
-       dianeState = "close";
-       publishDianeState();
+       dianeDoorClosing();
+     }
+  }
+
+    if (newTopic == "kolcun/zigbee2mqtt/DianeGarageCloseSensor/contact") {
+     if (newPayload == "true"){
+       dianeDoorClosed();
+     }
+    if (newPayload == "false"){
+       dianeDoorOpening();
      }
   }
 
@@ -319,6 +326,7 @@ void reconnect() {
         pubSubClient.subscribe(MQTT_CLIENT_NAME"/mike/set");
         pubSubClient.subscribe(MQTT_CLIENT_NAME"/diane/set");
         pubSubClient.subscribe("kolcun/zigbee2mqtt/DianeGarageOpenSensor/contact");
+        pubSubClient.subscribe("kolcun/zigbee2mqtt/DianeGarageCloseSensor/contact");
       } else {
         Serial.print("failed, rc=");
         Serial.print(pubSubClient.state());
