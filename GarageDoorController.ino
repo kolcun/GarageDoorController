@@ -11,11 +11,8 @@
 
 #define MIKEGARAGECONTACT 27
 #define DIANEGARAGECONTACT 25
-//#define DIANEDOORSENSORCLOSEPOSITION 5 - For some reason pin 5 stopped working, changed to another one
 #define MIKEDOORSENSORCLOSEPOSITION 4
-#define DIANEDOORSENSORCLOSEPOSITION 19
 #define MIKEDOORSENSOROPENPOSITION 16
-#define DIANEDOORSENSOROPENPOSITION 23
 #define TEMPERATURE_PIN 32
 
 #define HOSTNAME "GarageController"
@@ -35,8 +32,7 @@ WiFiClient wifiClient;
 PubSubClient pubSubClient(wifiClient);
 OneButton mikeDoorSensorClosed(MIKEDOORSENSORCLOSEPOSITION, true, true);
 OneButton mikeDoorSensorOpen(MIKEDOORSENSOROPENPOSITION, true, true);
-//OneButton dianeDoorSensorClosed(DIANEDOORSENSORCLOSEPOSITION, true, true);
-//OneButton dianeDoorSensorOpen(DIANEDOORSENSOROPENPOSITION, true, true);
+
 
 OneWire oneWire(TEMPERATURE_PIN);
 DallasTemperature sensors(&oneWire);
@@ -67,8 +63,6 @@ void loop() {
   }
   mikeDoorSensorClosed.tick();
   mikeDoorSensorOpen.tick();
-  //dianeDoorSensorClosed.tick();
-  //dianeDoorSensorOpen.tick();
   pubSubClient.loop();
 
 }
@@ -110,13 +104,6 @@ void setupButtons() {
   mikeDoorSensorOpen.attachLongPressStop(mikeDoorClosing);
   mikeDoorSensorOpen.setPressTicks(300);
 
-  //dianeDoorSensorClosed.attachLongPressStart(dianeDoorClosed);
-  //dianeDoorSensorClosed.attachLongPressStop(dianeDoorOpening);
-  //dianeDoorSensorClosed.setPressTicks(300);
-
-  //dianeDoorSensorOpen.attachLongPressStart(dianeDoorOpen);
-  //dianeDoorSensorOpen.attachLongPressStop(dianeDoorClosing);
-  //dianeDoorSensorOpen.setPressTicks(300);
 }
 
 //Door has closed - in down position, not moving
@@ -151,42 +138,34 @@ void mikeDoorClosing() {
 void dianeDoorClosed() {
   dianeState = "close";
   Serial.println("Diane Door Closed");
-  publishDianeState();
 }
 
 //Door has started opening - in down position, moving up
 void dianeDoorOpening() {
   dianeState = "moving-opening";
   Serial.println("Diane Door Opening - moving up");
-  publishDianeState();
 }
 
 //Door has opened - in up position, not moving.
 void dianeDoorOpen() {
   dianeState = "open";
   Serial.println("Diane Door Open");
-  publishDianeState();
 }
 
 //Door has started closing - in up position, moving down
 void dianeDoorClosing() {
   dianeState = "moving-closing";
   Serial.println("Diane Door Closing - moving down");
-  publishDianeState();
 }
 
 void publishStates() {
   publishMikeState();
-  publishDianeState();
 }
 
 void publishMikeState() {
   pubSubClient.publish(MQTT_CLIENT_NAME"/mike/state", (uint8_t*) mikeState.c_str(), mikeState.length(), true);
 }
 
-void publishDianeState() {
-  pubSubClient.publish(MQTT_CLIENT_NAME"/diane/state", (uint8_t*) dianeState.c_str(), dianeState.length(), true);
-}
 
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
