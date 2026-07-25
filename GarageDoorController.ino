@@ -226,10 +226,9 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
 void setupRelays() {
   pinMode(MIKEGARAGECONTACT, OUTPUT);
-  digitalWrite(MIKEGARAGECONTACT, HIGH);
+  digitalWrite(MIKEGARAGECONTACT, LOW);
   pinMode(DIANEGARAGECONTACT, OUTPUT);
-  digitalWrite(DIANEGARAGECONTACT, HIGH);
-
+  digitalWrite(DIANEGARAGECONTACT, LOW);
 }
 
 void setupOTA() {
@@ -323,14 +322,14 @@ void reconnect() {
 
 void triggerMikeGarage() {
   Serial.println("Trigger Mike Garage");
-  digitalWrite(MIKEGARAGECONTACT, LOW);
-  delay(250);
   digitalWrite(MIKEGARAGECONTACT, HIGH);
+  delay(250);
+  digitalWrite(MIKEGARAGECONTACT, LOW);
 }
 
 void triggerDianeGarage() {
   Serial.println("Trigger Diane Garage");
-  digitalWrite(DIANEGARAGECONTACT, LOW);
-  delay(250);
   digitalWrite(DIANEGARAGECONTACT, HIGH);
+  delay(250);
+  digitalWrite(DIANEGARAGECONTACT, LOW);
 }
