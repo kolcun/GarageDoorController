@@ -138,34 +138,43 @@ void mikeDoorClosing() {
 void dianeDoorClosed() {
   dianeState = "close";
   Serial.println("Diane Door Closed");
+  publishDianeState();
 }
 
 //Door has started opening - in down position, moving up
 void dianeDoorOpening() {
   dianeState = "moving-opening";
   Serial.println("Diane Door Opening - moving up");
+  publishDianeState();
 }
 
 //Door has opened - in up position, not moving.
 void dianeDoorOpen() {
   dianeState = "open";
   Serial.println("Diane Door Open");
+  publishDianeState();
 }
 
 //Door has started closing - in up position, moving down
 void dianeDoorClosing() {
   dianeState = "moving-closing";
   Serial.println("Diane Door Closing - moving down");
+  publishDianeState();
+  
 }
 
 void publishStates() {
   publishMikeState();
+  publishDianeState();
 }
 
 void publishMikeState() {
   pubSubClient.publish(MQTT_CLIENT_NAME"/mike/state", (uint8_t*) mikeState.c_str(), mikeState.length(), true);
 }
 
+void publishDianeState() {
+  pubSubClient.publish(MQTT_CLIENT_NAME"/diane/state", (uint8_t*) dianeState.c_str(), dianeState.length(), true);
+}
 
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
   Serial.print("Message arrived [");
